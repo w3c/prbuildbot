@@ -8,3 +8,18 @@
   pip:
     name: Flask
     state: present
+
+- name: Install requests module
+  pip:
+    name: requests
+    state: present
+
+- name: Install OpenSSL
+  apt:
+    name: libssl-dev
+    state: present
+
+- name: Install pyOpenSSL module
+  pip:
+    name: pyOpenSSL
+    state: present

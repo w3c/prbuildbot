@@ -4,8 +4,8 @@
   become: yes
   roles:
     - nginx
-    - uwsgi
     - flask
+    - uwsgi
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
