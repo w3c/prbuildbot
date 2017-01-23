@@ -1,0 +1,10 @@
+---
+- name: Install PIP
+  easy_install:
+    name: pip
+    state: present
+
+- name: Install Flask
+  pip:
+    name: Flask
+    state: present

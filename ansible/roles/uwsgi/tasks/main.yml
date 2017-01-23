@@ -1,0 +1,30 @@
+- name: Install UWSGI
+  pip:
+    name: uWSGI
+    state: present
+
+- name: Remove existing uwsgi socket
+  file:
+    path: /tmp/stabilitybot.sock
+    state: absent
+
+- name: Create /etc/uwsgi
+  file: 
+    path: /etc/uwsgi/vassals 
+    state: directory
+
+- name: uwsgi.ini is loaded
+  template: src=stabilitybot_uwsgi.ini dest=/etc/uwsgi/vassals backup=no
+
+- name: emperor.ini is loaded
+  template: src=emperor.ini dest=/etc/uwsgi
+
+- name: Emperor service is loaded
+  template: src=emperor.uwsgi.service dest=/etc/systemd/system backup=no
+
+- name: Start uwsgi-emperor
+  systemd:
+    name: emperor.uwsgi
+    daemon_reload: yes
+    enabled: yes
+    state: restarted

@@ -1,0 +1,11 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  roles:
+    - nginx
+    - uwsgi
+    - flask
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
