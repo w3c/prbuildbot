@@ -19,10 +19,7 @@ TRAVIS_URL = config.get('Travis', 'TRAVIS_URL')
 
 
 def _check_authorized(signature, public_key, payload):
-    """
-    Convert PEM-encoded public key to format for pyOpenSSL,
-    then verify signature.
-    """
+    """Reformat PEM-encoded public key for pyOpenSSL, then verify signature."""
     pkey_public_key = load_publickey(FILETYPE_PEM, public_key)
     certificate = X509()
     certificate.set_pubkey(pkey_public_key)
@@ -55,7 +52,7 @@ def travis():
         # TEST PUBLIC KEY
         # public_key = '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1mTMThevVTEmDKwaKcDB\ndsa9LSqowZ8aR+6M7l/GTGw/Q6faASDHYiV6bR7y20KbgeSiBE3HJGBeXtKPnjrG\nSiEoPXCSPIwRK2ZrOlsSwiEqRVRM1nuDw97gk0KxC9rvHyFizUGBhuiGAiKi/JHi\niEPWMflG9YQzsLDciiXm0SXazktktW5O9MMBmwdLsljGqeiwnlfRbmG5mi95sbSi\nZForhrsuATOA2paMmr15Ch29MWnm1U/1rsqF7sDvE/JTo2ZSFxUY7959KH+zXdGk\n5b631Jgdx/QEedP/JydeyJw5mLvY1UfZ2vzCkgEoQytI43Uoz9NQvzkqFcVRzZ9j\nAwIDAQAB\n-----END PUBLIC KEY-----\n'
         public_key = _get_travis_public_key()
-    except:
+    except (requests.Timeout, requests.RequestException):
         return "Failed to retrieve Travis CI public key", 500
 
     try:
