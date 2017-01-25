@@ -1,9 +1,0 @@
-[Travis]
-# Make sure you use the correct config URL, the .org and .com
-# have different keys!
-TRAVIS_URL = https://api.travis-ci.org
-
-[GitHub]
-GH_TOKEN = <gh-user-token>
-ORG = <gh-org>
-REPO = <gh-repo>
