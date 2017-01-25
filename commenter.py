@@ -7,6 +7,8 @@ import base64
 import json
 import logging
 import os
+import re
+from collections import OrderedDict
 from urlparse import urljoin
 
 import requests
@@ -17,12 +19,12 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
-CONFIG = ConfigParser.ConfigParser().readfp(open(r'config.txt'))
+CONFIG = ConfigParser.ConfigParser()
+CONFIG.readfp(open(r'config.txt'))
 TRAVIS_URL = CONFIG.get('Travis', 'TRAVIS_URL')
 GH_TOKEN = CONFIG.get('GitHub', 'GH_TOKEN')
 ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
-LOGGER = logging.getLogger(os.path.splitext(__file__)[0])
 
 
 class GitHub(object):
@@ -47,7 +49,7 @@ class GitHub(object):
 
     def post(self, url, data, headers=None):
         """Serialize and POST data to given URL."""
-        LOGGER.debug("POST %s", url)
+        app.logger.debug("POST %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.post(
@@ -61,7 +63,7 @@ class GitHub(object):
 
     def patch(self, url, data, headers=None):
         """Serialize and PATCH data to given URL."""
-        LOGGER.debug("PATCH %s", url)
+        app.logger.debug("PATCH %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.patch(
@@ -75,7 +77,7 @@ class GitHub(object):
 
     def get(self, url, headers=None):
         """Execute GET request for given URL."""
-        LOGGER.debug("GET %s", url)
+        app.logger.debug("GET %s", url)
         resp = requests.get(
             url,
             headers=self._headers(headers),
@@ -125,11 +127,10 @@ class GitHubCommentHandler(logging.Handler):
         except Exception:
             self.handleError(record)
 
-    def send(self):
+    def send(self, message, product):
         """Post log to GitHub and flush log."""
         # self.github.post_comment(self.pull_number, "\n".join(self.log_data))
-        self.github.post_comment(self.pull_number, "\n".join("Hello World!"),
-                                 "Firefox")
+        self.github.post_comment(self.pull_number, message, product)
         self.log_data = []
 
 
@@ -144,8 +145,24 @@ def check_authorized(signature, public_key, payload):
 def comment_to_github(payload):
     """Comment on the PR with extract from log."""
     pull_request = payload.get('pull_request_number')
+    jobs = payload.get('matrix')
     gh_handler = setup_github_logging(pull_request)
-    gh_handler.send()
+
+    for job in jobs:
+        config = job.get('config', {})
+        env = config.get('env', [])
+        for variable in env:
+            if 'PRODUCT=' in variable:
+                id = job.get('id')
+                response = requests.get(urljoin(TRAVIS_URL, "/jobs/%s/log" % id), timeout=10.0)
+                response.raise_for_status()
+                log_lines = list(OrderedDict.fromkeys(response.text.splitlines()))
+                comment_lines = []
+                for line in log_lines:
+                   if ':check_stability:' in line and 'DEBUG:' not in line:
+                       comment_lines.append(line)
+	        gh_handler.send(re.sub(r'^([A-Z])+:check_stability:', '', "\n".join(comment_lines), flags=re.MULTILINE), variable.split('=')[1])
+                break
     return "Commented on %s" % pull_request
 
 
@@ -178,8 +195,9 @@ def get_travis_public_key():
     """Return the PEM-encoded public key from Travis CI /config endpoint."""
     response = requests.get(urljoin(TRAVIS_URL, '/config'), timeout=10.0)
     response.raise_for_status()
-    return response.json()['config']['notifications']['webhook']['public_key']
-
+    public_key = response.json()['config']['notifications']['webhook']['public_key']
+    app.logger.debug("Travis Public Key: %s", public_key)
+    return public_key
 
 def setup_github_logging(pull_request):
     """Set up and return GitHub comment handler.
@@ -195,8 +213,8 @@ def setup_github_logging(pull_request):
     else:
         gh_handler = GitHubCommentHandler(github, pr_number)
         gh_handler.setLevel(logging.INFO)
-        LOGGER.debug("Setting up GitHub logging")
-        LOGGER.addHandler(gh_handler)
+        app.logger.debug("Setting up GitHub logging for PR#%s", pr_number)
+        app.logger.addHandler(gh_handler)
     return gh_handler
 
 
@@ -205,14 +223,20 @@ def travis():
     """Respond to Travis webhook."""
     signature = get_signature(request)
     payload = request.form['payload']
+    app.logger.debug("Payload: %s", payload)
     try:
         public_key = get_travis_public_key()
-    except (requests.Timeout, requests.RequestException):
+    except requests.Timeout:
+        app.logger.error({"message": "Timed out when attempting to retrieve Travis CI public key"})
         return "Failed to retrieve Travis CI public key", 500
-
+    except requests.RequestException as e:
+        app.logger.error({"message": "Failed to retrieve Travis CI public key", "error": e.message})
+        return "Failed to retrieve Travis CI public key", 500
     try:
         check_authorized(signature, public_key, payload)
-    except SignatureError:
+    except SignatureError as e:
+        app.logger.error({"message": "Failed to confirm Travis CI Signature.", "error": e.message})
+        app.logger.error("Payload was: %s", payload)
         return "Bad Travis CI Signature", 401
 
     json_payload = json.loads(payload)
