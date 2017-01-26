@@ -5,8 +5,6 @@
 import ConfigParser
 import base64
 import json
-import logging
-import os
 import re
 from collections import OrderedDict
 from urlparse import urljoin
@@ -105,35 +103,6 @@ class GitHub(object):
             self.post(issue_comments_url, data)
 
 
-class GitHubCommentHandler(logging.Handler):
-
-    """GitHub pull request comment handler.
-
-    Subclasses logging.Handler to add ability to post comments to GitHub.
-    """
-
-    def __init__(self, github, pull_number):
-        """Extend logging.Handler and set required properties on self."""
-        logging.Handler.__init__(self)
-        self.github = github
-        self.pull_number = pull_number
-        self.log_data = []
-
-    def emit(self, record):
-        """Format record and add to log."""
-        try:
-            msg = self.format(record)
-            self.log_data.append(msg)
-        except Exception:
-            self.handleError(record)
-
-    def send(self, message, product):
-        """Post log to GitHub and flush log."""
-        # self.github.post_comment(self.pull_number, "\n".join(self.log_data))
-        self.github.post_comment(self.pull_number, message, product)
-        self.log_data = []
-
-
 def check_authorized(signature, public_key, payload):
     """Reformat PEM-encoded public key for pyOpenSSL, then verify signature."""
     pkey_public_key = load_publickey(FILETYPE_PEM, public_key)
@@ -144,26 +113,34 @@ def check_authorized(signature, public_key, payload):
 
 def comment_to_github(payload):
     """Comment on the PR with extract from log."""
-    pull_request = payload.get('pull_request_number')
+    github = GitHub()
+    pull_request = int(payload.get('pull_request_number'))
     jobs = payload.get('matrix')
-    gh_handler = setup_github_logging(pull_request)
 
     for job in jobs:
         config = job.get('config', {})
         env = config.get('env', [])
         for variable in env:
             if 'PRODUCT=' in variable:
-                id = job.get('id')
-                response = requests.get(urljoin(TRAVIS_URL, "/jobs/%s/log" % id), timeout=10.0)
+                job_id = job.get('id')
+                response = requests.get(urljoin(TRAVIS_URL,
+                                                "/jobs/%s/log" % job_id),
+                                        timeout=10.0)
                 response.raise_for_status()
-                log_lines = list(OrderedDict.fromkeys(response.text.splitlines()))
+                log = response.text
+                log_lines = list(OrderedDict.fromkeys(log.splitlines()))
                 comment_lines = []
                 for line in log_lines:
-                   if ':check_stability:' in line and 'DEBUG:' not in line:
-                       if 'Subtest' in line:
-                           comment_lines.append('\n')
-                       comment_lines.append(line)
-	        gh_handler.send(re.sub(r'^([A-Z])+:check_stability:', '', "\n".join(comment_lines), flags=re.MULTILINE), variable.split('=')[1])
+                    if ':check_stability:' in line and 'DEBUG:' not in line:
+                        if 'Subtest' in line:
+                            comment_lines.append('\n')
+                        comment_lines.append(line)
+                github.post_comment(pull_request,
+                                    re.sub(r'^([A-Z])+:check_stability:',
+                                           '',
+                                           '\n'.join(comment_lines),
+                                           flags=re.MULTILINE),
+                                    variable.split('=')[1])
                 break
     return "Commented on %s" % pull_request
 
@@ -201,24 +178,6 @@ def get_travis_public_key():
     app.logger.debug("Travis Public Key: %s", public_key)
     return public_key
 
-def setup_github_logging(pull_request):
-    """Set up and return GitHub comment handler.
-
-    :param args: the parsed arguments passed to the script
-    """
-    gh_handler = None
-    github = GitHub()
-    try:
-        pr_number = int(pull_request)
-    except ValueError:
-        pass
-    else:
-        gh_handler = GitHubCommentHandler(github, pr_number)
-        gh_handler.setLevel(logging.INFO)
-        app.logger.debug("Setting up GitHub logging for PR#%s", pr_number)
-        app.logger.addHandler(gh_handler)
-    return gh_handler
-
 
 @app.route('/stability/travis', methods=['POST'])
 def travis():
@@ -229,15 +188,24 @@ def travis():
     try:
         public_key = get_travis_public_key()
     except requests.Timeout:
-        app.logger.error({"message": "Timed out when attempting to retrieve Travis CI public key"})
+        app.logger.error({
+            "message":
+                "Timed out when attempting to retrieve Travis CI public key"
+        })
         return "Failed to retrieve Travis CI public key", 500
-    except requests.RequestException as e:
-        app.logger.error({"message": "Failed to retrieve Travis CI public key", "error": e.message})
+    except requests.RequestException as err:
+        app.logger.error({
+            "message": "Failed to retrieve Travis CI public key",
+            "error": err.message
+        })
         return "Failed to retrieve Travis CI public key", 500
     try:
         check_authorized(signature, public_key, payload)
-    except SignatureError as e:
-        app.logger.error({"message": "Failed to confirm Travis CI Signature.", "error": e.message})
+    except SignatureError as err:
+        app.logger.error({
+            "message": "Failed to confirm Travis CI Signature.",
+            "error": err.message
+        })
         app.logger.error("Payload was: %s", payload)
         return "Bad Travis CI Signature", 401
 
@@ -249,3 +217,4 @@ def travis():
 
 if __name__ == '__main__':
     app.run(debug=True)
+
