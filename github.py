@@ -95,13 +95,13 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def post_comment(self, issue_number, body, product):
+    def post_comment(self, issue_number, body, title):
         """Create or update comment in pull request comment section."""
         user = self.get(urljoin(self.base_url, "/user")).json()
         issue_comments_url = urljoin(self.base_url,
                                      "issues/%s/comments" % issue_number)
         comments = self.get(issue_comments_url).json()
-        title_line = format_comment_title(product)
+        title_line = format_comment_title(title)
         data = {"body": body}
         for comment in comments:
             if (comment["user"]["login"] == user["login"] and
@@ -112,4 +112,3 @@ class GitHub(object):
                 break
         else:
             self.post(issue_comments_url, data)
-

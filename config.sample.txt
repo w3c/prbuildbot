@@ -3,6 +3,7 @@
 # have different keys!
 # TRAVIS_URL = https://api.travis-ci.com
 TRAVIS_URL = https://api.travis-ci.org
+COMMENT_ENV_VAR = COMMENT_BOT
 
 [GitHub]
 GH_TOKEN = <gh-user-token>

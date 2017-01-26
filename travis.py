@@ -15,6 +15,7 @@ from OpenSSL.crypto import Error as SignatureError
 CONFIG = ConfigParser.ConfigParser()
 CONFIG.readfp(open(r'config.txt'))
 TRAVIS_URL = CONFIG.get('Travis', 'TRAVIS_URL')
+COMMENT_ENV_VAR = CONFIG.get('Travis', 'COMMENT_ENV_VAR')
 
 
 def check_authorized(signature, public_key, payload):
@@ -40,13 +41,32 @@ class Travis(object):
         self.logger = logger
         self.base_url = TRAVIS_URL
 
-    def get_build_log(self, job_id):
+    def get_job_log(self, job_id):
         """Retrieve and return log from Travis CI API."""
         response = requests.get(urljoin(self.base_url,
                                         "/jobs/%s/log" % job_id),
                                 timeout=10.0)
         response.raise_for_status()
         return response.text
+
+    def get_logs(self, payload):
+        """Get logs for a PR build."""
+        if payload.get('type') != 'pull_request':
+            return {}
+
+        jobs = payload.get('matrix')
+        logs = {}
+
+        for job in jobs:
+            config = job.get('config', {})
+            env = config.get('env', [])
+            for variable in env:
+                if COMMENT_ENV_VAR in variable:
+                    job_id = job.get('id')
+                    log = self.get_job_log(job_id)
+                    logs[variable.partition('=')[2]] = log
+                    break
+        return logs
 
     def get_public_key(self):
         """Return PEM-encoded public key from Travis CI /config endpoint."""
@@ -86,4 +106,3 @@ class Travis(object):
             })
             return {"error": {"message": error_message, "code": 401}}
         return json.loads(payload)
-
