@@ -160,6 +160,8 @@ def comment_to_github(payload):
                 comment_lines = []
                 for line in log_lines:
                    if ':check_stability:' in line and 'DEBUG:' not in line:
+                       if 'Subtest' in line:
+                           comment_lines.append('\n')
                        comment_lines.append(line)
 	        gh_handler.send(re.sub(r'^([A-Z])+:check_stability:', '', "\n".join(comment_lines), flags=re.MULTILINE), variable.split('=')[1])
                 break
@@ -241,8 +243,7 @@ def travis():
 
     json_payload = json.loads(payload)
 
-    if (json_payload.get('status_message') == 'Passed' and
-            json_payload.get('type') == 'pull_request'):
+    if json_payload.get('type') == 'pull_request':
         return comment_to_github(json_payload)
     return 'OK'
 
