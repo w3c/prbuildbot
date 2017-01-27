@@ -23,3 +23,16 @@
   pip:
     name: pyOpenSSL
     state: present
+
+- name: Symlink project directory
+  file:
+    path: /var/www/prbuildbot
+    src:  "{{playbook_dir}}/.."
+    state: link
+
+- name: Set project directory group to www-data
+  file:
+    path: "{{playbook_dir}}/.."
+    state: directory
+    group: www-data
+    recurse: yes

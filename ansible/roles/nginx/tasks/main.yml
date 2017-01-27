@@ -4,8 +4,8 @@
     state: present
 
 - name: Ensure default nginx server is not present
-  file: 
-    path: /etc/nginx/sites-enabled/default 
+  file:
+    path: /etc/nginx/sites-enabled/default
     state: absent
 
 - name: ensure nginx config files exist
