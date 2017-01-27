@@ -16,6 +16,10 @@ ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 
 
+# TODO: Find a way around this w3c/web-platform-tests -specific way of
+# handling title/finding the previous comments.
+# This currently _must_ match the function of the same name in
+# w3c/web-platform-tests/check_stability.py
 def format_comment_title(product):
     """
     Produce a Markdown-formatted string based on a given product.

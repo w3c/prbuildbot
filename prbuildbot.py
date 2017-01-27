@@ -33,6 +33,7 @@ def bot():
 
     comments = parse_logs(logs)
 
+    # Create a separate comment for every job
     for title, comment in comments.iteritems():
         try:
             github.post_comment(issue_number,
