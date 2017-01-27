@@ -14,7 +14,7 @@ from flask import Flask, request
 app = Flask(__name__)
 
 
-@app.route('/stability/travis', methods=['POST'])
+@app.route('/prbuildbot/travis', methods=['POST'])
 def bot():
     """Respond to Travis webhook."""
     travis = Travis(app.logger)
