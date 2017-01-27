@@ -101,3 +101,9 @@ and set up the configuration file for the application.
 | GH_TOKEN        | The Personal Access Token created in Configuration Step 2, above                                                                                    |
 | ORG             | The GitHub organization/owner of the main repository (this project's ORG would be "bobholt")                                                        |
 | REPO            | The main repository (this project's REPO would be "prbuildbot")                                                                                     |
+
+## Testing
+
+In the application root run `python test`. If you have changed the log_parser,
+you will have to update the `log_parser.parse_logs` tests for your own
+application.
