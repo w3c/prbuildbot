@@ -7,13 +7,16 @@ from github import GitHub
 from travis import Travis
 from log_parser import parse_logs
 
+import logging
 import requests
 
+logging.basicConfig(filename='prbuildbot.log', level=logging.DEBUG)
 
-def webhook_handler(request, logger):
+
+def webhook_handler(request):
     """Respond to Travis webhook."""
-    travis = Travis(logger)
-    github = GitHub(logger)
+    travis = Travis()
+    github = GitHub()
 
     # The payload comes in the request, but we need to make sure it is
     # really signed by Travis CI. If not, respond to this request with
@@ -35,7 +38,7 @@ def webhook_handler(request, logger):
                                 comment,
                                 title)
         except requests.RequestException as err:
-            logger.error(err.response.text)
+            logging.error(err.response.text)
             return err.response.text, 500
 
     return "OK", 200

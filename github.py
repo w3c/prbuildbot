@@ -5,6 +5,7 @@
 
 import ConfigParser
 import json
+import logging
 from urlparse import urljoin
 
 import requests
@@ -43,14 +44,13 @@ class GitHub(object):
 
     """Interface to GitHub API."""
 
-    def __init__(self, logger):
+    def __init__(self):
         """Create GitHub instance."""
         self.headers = {"Accept": "application/vnd.github.v3+json"}
         self.auth = (GH_TOKEN, "x-oauth-basic")
         self.org = ORG
         self.repo = REPO
         self.base_url = "https://api.github.com/repos/%s/%s/" % (ORG, REPO)
-        self.logger = logger
 
     def _headers(self, headers):
         """Extend existing HTTP headers and return new value."""
@@ -62,7 +62,7 @@ class GitHub(object):
 
     def post(self, url, data, headers=None):
         """Serialize and POST data to given URL."""
-        self.logger.debug("POST %s", url)
+        logging.debug("POST %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.post(
@@ -76,7 +76,7 @@ class GitHub(object):
 
     def patch(self, url, data, headers=None):
         """Serialize and PATCH data to given URL."""
-        self.logger.debug("PATCH %s", url)
+        logging.debug("PATCH %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.patch(
@@ -90,7 +90,7 @@ class GitHub(object):
 
     def get(self, url, headers=None):
         """Execute GET request for given URL."""
-        self.logger.debug("GET %s", url)
+        logging.debug("GET %s", url)
         resp = requests.get(
             url,
             headers=self._headers(headers),
