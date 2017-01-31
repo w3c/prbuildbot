@@ -38,4 +38,4 @@ def webhook_handler(request, logger):
             logger.error(err.response.text)
             return err.response.text, 500
 
-    return "OK"
+    return "OK", 200
