@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Flask server to listen for Travis webhooks and post GitHub PR comments."""
+"""This module contains the TravisCI webhook handler."""
 
 from github import GitHub
 from travis import Travis
@@ -9,16 +9,11 @@ from log_parser import parse_logs
 
 import requests
 
-from flask import Flask, request
 
-app = Flask(__name__)
-
-
-@app.route('/prbuildbot/travis', methods=['POST'])
-def bot():
+def webhook_handler(request, logger):
     """Respond to Travis webhook."""
-    travis = Travis(app.logger)
-    github = GitHub(app.logger)
+    travis = Travis(logger)
+    github = GitHub(logger)
 
     # The payload comes in the request, but we need to make sure it is
     # really signed by Travis CI. If not, respond to this request with
@@ -40,11 +35,7 @@ def bot():
                                 comment,
                                 title)
         except requests.RequestException as err:
-            app.logger.error(err.response.text)
+            logger.error(err.response.text)
             return err.response.text, 500
 
     return "OK"
-
-
-if __name__ == '__main__':
-    app.run(debug=True)
