@@ -44,6 +44,8 @@ class GitHub(object):
 
     """Interface to GitHub API."""
 
+    max_comment_length = 65536
+
     def __init__(self):
         """Create GitHub instance."""
         self.headers = {"Accept": "application/vnd.github.v3+json"}
@@ -106,8 +108,20 @@ class GitHub(object):
                                      "issues/%s/comments" % issue_number)
         comments = self.get(issue_comments_url).json()
         title_line = format_comment_title(title)
-        link = ' [View the complete job log.](%s)' % full_log_url
-        data = {"body": "%s\n\n%s" % (link, body)}
+        body = ' [View the complete job log.](%s)\n\n%s' % (full_log_url, body)
+
+        if len(body) > self.max_comment_length:
+
+            truncation_msg = ('*This report has been truncated because the ' +
+                'total content is %s characters in length, which is in ' +
+                'excess of GitHub.com\'s limit for comments (%s ' +
+                'characters).\n\n') % (len(body), self.max_comment_length)
+
+            body = truncation_msg + \
+                body[0:self.max_comment_length - len(truncation_msg)]
+
+        data = {"body": body}
+
         for comment in comments:
             if (comment["user"]["login"] == user["login"] and
                     title_line in comment["body"]):
