@@ -27,12 +27,6 @@ def check_authorized(signature, public_key, payload):
     verify(certificate, signature, payload, str('sha1'))
 
 
-def get_signature(req):
-    """Extract raw bytes of the request signature from Travis."""
-    signature = req.headers['SIGNATURE']
-    return base64.b64decode(signature)
-
-
 class Travis(object):
 
     """Interface to GitHub API."""
@@ -78,11 +72,10 @@ class Travis(object):
         logging.debug("Travis Public Key: %s", public_key)
         return public_key
 
-    def get_verified_payload(self, request):
+    def get_verified_payload(self, payload, signature):
         """Verify payload with Travis CI signature and public key."""
-        payload = request.form['payload']
         logging.debug("Payload: %s", payload)
-        signature = get_signature(request)
+        decoded_signature = base64.b64decode(signature)
         try:
             public_key = self.get_public_key()
         except requests.Timeout:
@@ -97,7 +90,7 @@ class Travis(object):
             })
             return {"error": {"message": error_message, "code": 500}}
         try:
-            check_authorized(signature, public_key, payload)
+            check_authorized(decoded_signature, public_key, payload)
         except SignatureError as err:
             error_message = "Failed to confirm Travis CI Signature."
             logging.error({

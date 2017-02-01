@@ -13,7 +13,7 @@ import requests
 logging.basicConfig(filename='prbuildbot.log', level=logging.DEBUG)
 
 
-def webhook_handler(request):
+def webhook_handler(payload, signature):
     """Respond to Travis webhook."""
     travis = Travis()
     github = GitHub()
@@ -21,7 +21,7 @@ def webhook_handler(request):
     # The payload comes in the request, but we need to make sure it is
     # really signed by Travis CI. If not, respond to this request with
     # an error.
-    verified_payload = travis.get_verified_payload(request)
+    verified_payload = travis.get_verified_payload(payload, signature)
     error = verified_payload.get('error')
     if error:
         return error.get('message'), error.get('code')

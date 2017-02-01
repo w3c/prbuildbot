@@ -13,7 +13,9 @@ app = Flask(__name__)
 @app.route('/prbuildbot/travis', methods=['POST'])
 def bot():
     """Respond with the output of the webhook handler."""
-    return webhook_handler(request)
+    payload = request.form['payload']
+    signature = request.headers['SIGNATURE']
+    return webhook_handler(payload, signature)
 
 if __name__ == '__main__':
     app.run(debug=True)
