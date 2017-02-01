@@ -5,8 +5,35 @@ allows commenting on PRs from both trusted and untrusted branches of the main
 repository without exposing the GitHub Personal Access Token of the commenting
 user.
 
+## Installation
+This bot can be installed in any number of Python server environments. wptserve
+and Flask options are described below.
 
-## Installation on Dedicated Server
+
+### Installation as a wptserve application
+
+[wptserve](http://wptserve.readthedocs.io/en/latest/introduction.html) is a
+server used throughout the W3C testing infrastructure. There is currently no
+Ansible configuration for this installation type. The following general
+instructions should get you running.
+
+#### Requirements
+- Python 2.7
+
+#### Process
+1. Install the `requests` and `pyOpenSSL` modules into your Python environment.
+  - pyOpenSSL requires a dev version of OpenSSL (e.g. `libssl-dev`)
+2. Install [wptserve](https://github.com/w3c/wptserve).
+  - Clone from GitHub
+  - Run `sudo python setup.py install` from the cloned directory.
+3. Clone this project and `cd` into the cloned directory.
+4. Configure the application for your project. See
+    [Configuration](#configuration), below.
+5. Run `python wptserve_app.py`
+  - May require `sudo` if you receive a "Permission Denied" error.
+
+
+### Installation on Dedicated Server with nginx as a Flask application
 
 This installation process uses [Ansible](http://docs.ansible.com/) to configure
 the server to use [nginx](http://nginx.org/) and
@@ -14,14 +41,14 @@ the server to use [nginx](http://nginx.org/) and
 [Flask](http://flask.pocoo.org/) application. It expects nginx to be able to
 use port 80.
 
-### Requirements
+#### Requirements
 
 - Ubuntu-like server environment
 - [git](https://git-scm.com/downloads)
 - [Ansible >= 2.2.1.0](http://docs.ansible.com/ansible/intro_installation.html#latest-releases-via-pip)
   - Note: on Ubuntu, this requires installing ansible via `pip`, not `apt`.
 
-### Process
+#### Process
 
 This is how to install the dependencies and application on a base Ubuntu 16.04
 box. Git should come out of the box.
