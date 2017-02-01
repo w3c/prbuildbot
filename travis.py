@@ -29,7 +29,7 @@ def check_authorized(signature, public_key, payload):
 
 class Travis(object):
 
-    """Interface to GitHub API."""
+    """Interface to Travis API."""
 
     def __init__(self):
         """Create Travis instance."""
