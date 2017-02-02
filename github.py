@@ -114,5 +114,5 @@ class GitHub(object):
                                       "issues/comments/%s" % comment["id"])
                 self.patch(comment_url, data)
                 break
-        else:
-            self.post(issue_comments_url, data)
+            else:
+                self.post(issue_comments_url, data)
