@@ -123,7 +123,7 @@ and set up the configuration file for the application.
 
 | Property        | Description                                                                                                                                         |
 |-----------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
-| TRAVIS_URL      | The Travis CI api endpoint that applies to your application (either .com or .org)                                                                   |
+| TRAVIS_DOMAIN      | The Travis CI domain that applies to your application (either `travis-ci.com` or `travis-ci.org`)                                                                   |
 | COMMENT_ENV_VAR | An environment variable used in your Travis CI build matrix that serves as a flag for whether or not the job's log should be parsed as a PR comment |
 | GH_TOKEN        | The Personal Access Token created in Configuration Step 2, above                                                                                    |
 | ORG             | The GitHub organization/owner of the main repository (this project's ORG would be "bobholt")                                                        |

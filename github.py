@@ -99,14 +99,15 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def post_comment(self, issue_number, body, title):
+    def post_comment(self, issue_number, body, title, full_log_url):
         """Create or update comment in pull request comment section."""
         user = self.get(urljoin(self.base_url, "/user")).json()
         issue_comments_url = urljoin(self.base_url,
                                      "issues/%s/comments" % issue_number)
         comments = self.get(issue_comments_url).json()
         title_line = format_comment_title(title)
-        data = {"body": body}
+        link = ' [View the complete job log.](%s)' % full_log_url
+        data = {"body": "%s\n\n%s" % (link, body)}
         for comment in comments:
             if (comment["user"]["login"] == user["login"] and
                     title_line in comment["body"]):

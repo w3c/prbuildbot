@@ -10,15 +10,14 @@ The following example parses the logs for w3c/web-platform-tests.
 """
 
 import re
-from collections import OrderedDict
 
 
 def parse_logs(logs):
     """Extract and return relevant info from log."""
-    comments = {}
-    for title, log in logs.iteritems():
+    comments = []
+    for log in logs:
 
-        log_lines = log.splitlines()
+        log_lines = log['data'].splitlines()
         comment_lines = []
         for line in log_lines:
             if ':check_stability:' in line and 'DEBUG:' not in line:
@@ -36,5 +35,9 @@ def parse_logs(logs):
                               '\n'.join(comment_lines),
                               flags=re.MULTILINE)
 
-        comments[title] = comment_text
+        comments.append({
+            'job_id': log['job_id'],
+            'title': log['title'],
+            'text': comment_text
+        })
     return comments

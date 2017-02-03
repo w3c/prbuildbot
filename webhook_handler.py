@@ -32,11 +32,14 @@ def webhook_handler(payload, signature):
     comments = parse_logs(logs)
 
     # Create a separate comment for every job
-    for title, comment in comments.iteritems():
+    for comment in comments:
         try:
+            log_url = Travis.job_url(github.org, github.repo,
+                                     comment['job_id'])
             github.post_comment(issue_number,
-                                comment,
-                                title)
+                                comment['text'],
+                                comment['title'],
+                                log_url)
         except requests.RequestException as err:
             logging.error(err.response.text)
             return err.response.text, 500

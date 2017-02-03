@@ -1,8 +1,8 @@
 [Travis]
 # Make sure you use the correct config URL, the .org and .com
 # have different keys!
-# TRAVIS_URL = https://api.travis-ci.com
-TRAVIS_URL = https://api.travis-ci.org
+# TRAVIS_DOMAIN = travis-ci.com
+TRAVIS_DOMAIN = travis-ci.org
 COMMENT_ENV_VAR = COMMENT_BOT
 
 [GitHub]
