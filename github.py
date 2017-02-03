@@ -109,10 +109,8 @@ class GitHub(object):
         data = {"body": body}
         for comment in comments:
             if (comment["user"]["login"] == user["login"] and
-                    comment["body"].startswith(title_line)):
+                    title_line in comment["body"]):
                 comment_url = urljoin(self.base_url,
                                       "issues/comments/%s" % comment["id"])
-                self.patch(comment_url, data)
-                break
-            else:
-                self.post(issue_comments_url, data)
+                return self.patch(comment_url, data)
+        return self.post(issue_comments_url, data)
