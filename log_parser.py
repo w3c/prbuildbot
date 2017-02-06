@@ -18,13 +18,7 @@ def parse_logs(logs):
     comments = {}
     for title, log in logs.iteritems():
 
-        # The log currently duplicates each line in the log.
-        # Split the lines, convert to an OrderedDict to remove
-        # duplicates while maintaining order, and turn it back into a
-        # list.
-        # Note: This may incorrectly assume there are no duplications
-        #       that we _do_ want.
-        log_lines = list(OrderedDict.fromkeys(log.splitlines()))
+        log_lines = log.splitlines()
         comment_lines = []
         for line in log_lines:
             if ':check_stability:' in line and 'DEBUG:' not in line:
