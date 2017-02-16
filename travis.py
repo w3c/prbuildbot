@@ -74,7 +74,6 @@ class Travis(object):
 
     def get_verified_payload(self, payload, signature):
         """Verify payload with Travis CI signature and public key."""
-        logging.debug("Payload: %s", payload)
         decoded_signature = base64.b64decode(signature)
         try:
             public_key = self.get_public_key()
