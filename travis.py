@@ -7,6 +7,7 @@ import ConfigParser
 import base64
 import logging
 import json
+import re
 from urlparse import urljoin
 
 import requests
@@ -61,11 +62,12 @@ class Travis(object):
             config = job.get('config', {})
             env = config.get('env', [])
             for variable in env:
-                if COMMENT_ENV_VAR in variable:
+                title_match = re.search(r"%s=([\w:]+)" % COMMENT_ENV_VAR, variable)
+                if title_match:
                     job_id = job.get('id')
                     logs.append({
                         'job_id': job_id,
-                        'title': variable.partition('=')[2],
+                        'title': title_match.group(1),
                         'data': self.get_job_log(job_id)
                     })
                     break
