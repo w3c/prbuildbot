@@ -62,12 +62,13 @@ class Travis(object):
             config = job.get('config', {})
             env = config.get('env', [])
             for variable in env:
-                title_match = re.search(r"%s=([\w:]+)" % COMMENT_ENV_VAR, variable)
-                if title_match:
+                build_job_match = re.search(r"%s=([\w:]+)" % COMMENT_ENV_VAR, variable)
+                lint_job_match = re.search(r"(lint)", variable)
+                if build_job_match or lint_job_match:
                     job_id = job.get('id')
                     logs.append({
                         'job_id': job_id,
-                        'title': title_match.group(1),
+                        'title': (build_job_match or lint_job_match).group(1),
                         'data': self.get_job_log(job_id)
                     })
                     break

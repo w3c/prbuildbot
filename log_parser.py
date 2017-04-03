@@ -19,8 +19,9 @@ def parse_logs(logs):
 
         log_lines = log['data'].splitlines()
         comment_lines = []
+        match_regex = r'^([A-Z])+(:check_stability:|:lint:)'
         for line in log_lines:
-            if ':check_stability:' in line and 'DEBUG:' not in line:
+            if re.search(match_regex, line) and 'DEBUG:' not in line:
 
                 # Add a newline before the Subtest Results table
                 # There's probably a more robust way to do this check.
@@ -30,10 +31,13 @@ def parse_logs(logs):
 
         # Remove the <LOG_LEVEL>:check_stability: strings at the
         # beginning of every line
-        comment_text = re.sub(r'^([A-Z])+:check_stability:',
+        comment_text = re.sub(match_regex,
                               '',
                               '\n'.join(comment_lines),
                               flags=re.MULTILINE)
+
+        if log['title'] == 'lint' and len(comment_text) == 0:
+            comment_text = 'Passed'
 
         comments.append({
             'job_id': log['job_id'],

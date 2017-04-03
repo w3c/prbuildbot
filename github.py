@@ -108,6 +108,8 @@ class GitHub(object):
                                      "issues/%s/comments" % issue_number)
         comments = self.get(issue_comments_url).json()
         title_line = format_comment_title(title)
+        if title_line not in body:
+            body = "%s\n\n%s" % (title_line, body)
         body = ' [View the complete job log.](%s)\n\n%s' % (full_log_url, body)
 
         if len(body) > self.max_comment_length:
