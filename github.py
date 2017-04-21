@@ -17,29 +17,6 @@ ORG = CONFIG.get('GitHub', 'ORG')
 REPO = CONFIG.get('GitHub', 'REPO')
 
 
-# TODO: Find a way around this w3c/web-platform-tests -specific way of
-# handling title/finding the previous comments.
-# This currently _must_ match the function of the same name in
-# w3c/web-platform-tests/check_stability.py
-def format_comment_title(product):
-    """
-    Produce a Markdown-formatted string based on a given product.
-
-    Returns a string containing a browser identifier optionally followed
-    by a colon and a release channel. (For example: "firefox" or
-    "chrome:dev".) The generated title string is used both to create new
-    comments and to locate (and subsequently update) previously-submitted
-    comments.
-    """
-    parts = product.split(":")
-    title = parts[0].title()
-
-    if len(parts) > 1:
-        title += " (%s channel)" % parts[1]
-
-    return "# %s #" % title
-
-
 class GitHub(object):
 
     """Interface to GitHub API."""
@@ -101,19 +78,20 @@ class GitHub(object):
         resp.raise_for_status()
         return resp
 
-    def post_comment(self, issue_number, body, title, full_log_url):
-        """Create or update comment in pull request comment section."""
+    def get_comments_for_user(self, issue_number):
         user = self.get(urljoin(self.base_url, "/user")).json()
         issue_comments_url = urljoin(self.base_url,
                                      "issues/%s/comments" % issue_number)
-        comments = self.get(issue_comments_url).json()
-        title_line = format_comment_title(title)
-        if title_line not in body:
-            body = "%s\n\n%s" % (title_line, body)
-        body = ' [View the complete job log.](%s)\n\n%s' % (full_log_url, body)
+        return [item for item in self.get(issue_comments_url).json() if
+                comment["user"]["login"] == user["login"]]
+
+
+    def post_comment(self, issue_number, comment_id, body):
+        """Create or update comment in pull request comment section."""
+        issue_comments_url = urljoin(self.base_url,
+                                     "issues/%s/comments" % issue_number)
 
         if len(body) > self.max_comment_length:
-
             truncation_msg = ('*This report has been truncated because the ' +
                 'total content is %s characters in length, which is in ' +
                 'excess of GitHub.com\'s limit for comments (%s ' +
@@ -124,10 +102,9 @@ class GitHub(object):
 
         data = {"body": body}
 
-        for comment in comments:
-            if (comment["user"]["login"] == user["login"] and
-                    title_line in comment["body"]):
-                comment_url = urljoin(self.base_url,
-                                      "issues/comments/%s" % comment["id"])
-                return self.patch(comment_url, data)
+        if comment_id is not None:
+            comment_url = urljoin(self.base_url,
+                                  "issues/comments/%s" % comment["id"])
+            return self.patch(comment_url, data)
+
         return self.post(issue_comments_url, data)

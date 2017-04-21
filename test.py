@@ -1,6 +1,6 @@
 import unittest
 from log_parser import parse_logs
-
+from comment import CommentParser, Section, update, create_body
 
 class LogParserTestCase(unittest.TestCase):
 
@@ -52,6 +52,100 @@ class LogParserTestCase(unittest.TestCase):
                              {'job_id': 88, 'title': 'chrome', 'text': 'Hello World!\nGoodbye Cruel World!'}
                          ],
                          'It should include newline characters as appropriate.')
+
+
+class CommentParserTestCase(unittest.TestCase):
+    def compare(self, comment, expected):
+        parser = CommentParser()
+        actual = parser.parse(comment)
+        self.assertEqual(len(actual), len(expected))
+        for a, e in zip(actual, expected):
+            self.assertEqual(a.title, e[0])
+            self.assertEqual(a.body, e[1])
+
+    def test_0(self):
+        comment = """<!--PRBUILDBOT:COMMENT-->
+Before first
+<!--PRBUILDBOT:START:first\\2dsection-->
+In first
+In first 2
+<!--PRBUILDBOT:END-->
+After first
+<!--PRBUILDBOT:START:second-->
+In second
+<!--other comment-->
+End not at start of line<!--PRBUILDBOT:END-->
+<!--PRBUILDBOT:END-->
+After second
+"""
+        expected = [(None, "Before first"),
+                    ("first-section", "In first\nIn first 2"),
+                    (None, "After first"),
+                    ("second", "In second\n<!--other comment-->\nEnd not at start of line<!--PRBUILDBOT:END-->"),
+                    (None, "After second\n")]
+
+        self.compare(comment, expected)
+
+
+class TestUpdateComment(unittest.TestCase):
+    def test_0(self):
+        sections_data = [(None, "0"), ("leave1", "1"), ("update1", "2"), ("update2", "3"), ("leave2", "4")]
+        logs = [{"title": "update1", "text": "update1", "log_url": "http://example.org"},
+                {"title": "update2", "text": "update2"}]
+        sections = []
+
+
+        expected = [(None, "0"),
+                    ("leave1", "1"),
+                    ("update1", "# Update1 #\n\nupdate1\n\n[Job log](http://example.org)\n"),
+                    ("update2", "# Update2 #\n\nupdate2\n"),
+                    ("leave2", "4")]
+
+        for title, body in sections_data:
+            section = Section()
+            section.title = title
+            section.body_lines = body.split("\n")
+            sections.append(section)
+
+        update(sections, logs)
+
+        self.assertEquals(len(sections), len(expected))
+
+        for a, e in zip(sections, expected):
+            self.assertEquals(a.title, e[0])
+            self.assertEquals(a.body, e[1])
+
+
+class TestCommentBody(unittest.TestCase):
+    def test_0(self):
+        sections_data = [(None, "leading"),
+                         ("section-1", "Line1\nLine2"),
+                         ("section2", "Line3\nLine4\n"),
+                         (None, "trailing")]
+
+        sections = []
+        for title, body in sections_data:
+            section = Section()
+            section.title = title
+            section.body_lines = body.split("\n")
+            sections.append(section)
+
+        expected = """<!--PRBUILDBOT:COMMENT-->
+leading
+<!--PRBUILDBOT:START:section\\2d1-->
+Line1
+Line2
+<!--PRBUILDBOT:END-->
+<!--PRBUILDBOT:START:section2-->
+Line3
+Line4
+
+<!--PRBUILDBOT:END-->
+trailing"""
+
+        actual = create_body(sections)
+        self.assertEquals(actual, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

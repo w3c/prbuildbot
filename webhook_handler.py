@@ -3,6 +3,7 @@
 
 """This module contains the TravisCI webhook handler."""
 
+import comment
 from github import GitHub
 from travis import Travis
 from log_parser import parse_logs
@@ -29,19 +30,20 @@ def webhook_handler(payload, signature):
     issue_number = int(verified_payload.get('pull_request_number'))
     logs = travis.get_logs(verified_payload)
 
-    comments = parse_logs(logs)
+    log_data = parse_logs(logs)
 
-    # Create a separate comment for every job
-    for comment in comments:
-        try:
-            log_url = Travis.job_url(github.org, github.repo,
-                                     comment['job_id'])
-            github.post_comment(issue_number,
-                                comment['text'],
-                                comment['title'],
-                                log_url)
-        except requests.RequestException as err:
-            logging.error(err.response.text)
-            return err.response.text, 500
+    for log in log_data:
+        logs["log_url"] = Travis.job_url(github.org, github.repo,
+                                         log['job_id'])
+
+    comment_id, existing = comment.find(github.get_comments_for_user(issue_number))
+    body = comment.write(logs, existing)
+
+
+    try:
+        github.post_comment(issue_number, logs)
+    except requests.RequestException as err:
+        logging.error(err.response.text)
+        return err.response.text, 500
 
     return "OK", 200
