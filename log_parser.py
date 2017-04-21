@@ -36,8 +36,9 @@ def parse_logs(logs):
                               '\n'.join(comment_lines),
                               flags=re.MULTILINE)
 
+        # Don't comment on passing lint jobs
         if log['title'] == 'lint' and len(comment_text) == 0:
-            comment_text = 'Passed'
+            continue
 
         comments.append({
             'job_id': log['job_id'],
