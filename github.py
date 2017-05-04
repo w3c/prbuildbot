@@ -64,7 +64,6 @@ class GitHub(object):
 
     def post(self, url, data, headers=None):
         """Serialize and POST data to given URL."""
-        logging.debug("POST %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.post(
@@ -78,7 +77,6 @@ class GitHub(object):
 
     def patch(self, url, data, headers=None):
         """Serialize and PATCH data to given URL."""
-        logging.debug("PATCH %s", url)
         if data is not None:
             data = json.dumps(data)
         resp = requests.patch(
@@ -92,7 +90,6 @@ class GitHub(object):
 
     def get(self, url, headers=None):
         """Execute GET request for given URL."""
-        logging.debug("GET %s", url)
         resp = requests.get(
             url,
             headers=self._headers(headers),

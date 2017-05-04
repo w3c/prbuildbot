@@ -81,7 +81,6 @@ class Travis(object):
         response.raise_for_status()
         config = response.json()['config']
         public_key = config['notifications']['webhook']['public_key']
-        logging.debug("Travis Public Key: %s", public_key)
         return public_key
 
     def get_verified_payload(self, payload, signature):
@@ -90,11 +89,11 @@ class Travis(object):
         try:
             public_key = self.get_public_key()
         except requests.Timeout:
-            error_message = "Timed out retrieving Travis CI public key."
+            error_message = "prbuildbot: Timed out retrieving Travis CI public key."
             logging.error({"message": error_message})
             return {"error": {"message": error_message, "code": 500}}
         except requests.RequestException as err:
-            error_message = "Failed to retrieve Travis CI public key."
+            error_message = "prbuildbot: Failed to retrieve Travis CI public key."
             logging.error({
                 "message": error_message,
                 "error": err.message
@@ -103,7 +102,7 @@ class Travis(object):
         try:
             check_authorized(decoded_signature, public_key, payload)
         except SignatureError as err:
-            error_message = "Failed to confirm Travis CI Signature."
+            error_message = "prbuildbot: Failed to confirm Travis CI Signature."
             logging.error({
                 "message": error_message,
                 "error": err.message
