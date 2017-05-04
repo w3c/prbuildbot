@@ -3,6 +3,7 @@
 
 """This module contains the TravisCI webhook handler."""
 
+import ConfigParser
 from github import GitHub
 from travis import Travis
 from log_parser import parse_logs
@@ -11,6 +12,12 @@ import logging
 import requests
 
 logging.basicConfig(filename='prbuildbot.log', level=logging.DEBUG)
+
+CONFIG = ConfigParser.ConfigParser()
+CONFIG.readfp(open(r'config.txt'))
+GH_TOKEN = CONFIG.get('GitHub', 'GH_TOKEN')
+ORG = CONFIG.get('GitHub', 'ORG')
+REPO = CONFIG.get('GitHub', 'REPO')
 
 
 def webhook_handler(payload, signature):
@@ -25,6 +32,13 @@ def webhook_handler(payload, signature):
     error = verified_payload.get('error')
     if error:
         return error.get('message'), error.get('code')
+
+    # Ensure only builds for this repository can comment here.
+    repository = verified_payload.get("repository")
+    owner_name = repository.get("owner_name")
+    repo_name = repository.get("name")
+    if owner_name != ORG or repo_name != REPO:
+        return "Forbidden: Repository Mismatch. Build for %s/%s attempting to comment on %s/%s" % (owner_name, repo_name, ORG, REPO), 403
 
     issue_number = int(verified_payload.get('pull_request_number'))
     logs = travis.get_logs(verified_payload)
