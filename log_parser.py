@@ -19,7 +19,7 @@ def parse_logs(logs):
 
         log_lines = log['data'].splitlines()
         comment_lines = []
-        match_regex = r'^([A-Z])+(:check_stability:|:lint:)'
+        match_regex = r'^([A-Z])+(:.*check_stability:|:lint:)'
         for line in log_lines:
             if re.search(match_regex, line) and 'DEBUG:' not in line:
 
